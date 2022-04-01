@@ -135,10 +135,13 @@ class QuantinuumBackend(Backend):
         output_data_format = kwargs.pop("output_data_format", "honeywell.quantum-results.v1")
 
         if input_data_format == "qir.v1":
-            from qiskit_qir import to_qir_bitcode
+            logger.info(f"Using QIR as the job's payload format.")
+            from qiskit_qir import to_qir_bitcode, to_qir
             input_data = bytes(to_qir_bitcode(circuit))
             input_params["entryPoint"] = "main"
             input_params["arguments"] = []
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"QIR:\n{to_qir(circuit)}")
         elif input_data_format == "honeywell.openqasm.v1":
             input_data = circuit.qasm()
         else:
