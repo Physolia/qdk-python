@@ -240,17 +240,17 @@ class TestQiskit(QuantumTestBase):
 
     @pytest.mark.honeywell
     @pytest.mark.live_test
-    def test_plugins_submit_qiskit_to_honeywell(self, provider_id="honeywell"):
+    def test_plugins_submit_qiskit_to_honeywell(self):
         circuit = self._3_qubit_ghz()
-        self._test_qiskit_submit_honeywell(circuit=circuit, shots=None, provider_id=provider_id)
+        self._test_qiskit_submit_honeywell(circuit=circuit, provider_id="honeywell")
 
     @pytest.mark.honeywell
     @pytest.mark.live_test
-    def test_plugins_submit_qiskit_circuit_as_list_to_honeywell(self, provider_id="honeywell"):
+    def test_plugins_submit_qiskit_circuit_as_list_to_honeywell(self):
         circuit = self._3_qubit_ghz()
-        self._test_qiskit_submit_honeywell(circuit=[circuit], shots=None, provider_id=provider_id)
+        self._test_qiskit_submit_honeywell(circuit=[circuit], provider_id="honeywell")
 
-    @pytest.mark.ionq
+    @pytest.mark.honeywell
     @pytest.mark.live_test
     def test_plugins_submit_qiskit_multi_circuit_experiment_to_honeywell(self, provider_id="honeywell"):
         circuit = self._3_qubit_ghz()
@@ -268,7 +268,7 @@ class TestQiskit(QuantumTestBase):
             )
         assert str(exc.value) == "Multi-experiment jobs are not supported!"
 
-    def _test_qiskit_submit_honeywell(self, circuit, shots, provider_id="honeywell"):
+    def _test_qiskit_submit_honeywell(self, circuit, provider_id="honeywell", **kwargs):
 
         with unittest.mock.patch.object(
             Job,
@@ -281,16 +281,10 @@ class TestQiskit(QuantumTestBase):
             assert f"{provider_id}.hqs-lt-s1-apival" in backend.backend_names
             assert backend.backend_names[0] in [t.name for t in workspace.get_targets(provider_id=provider_id)]
 
-            if shots is None:
-                qiskit_job = backend.run(
-                    circuit=circuit
-                )
-
-            else:
-                qiskit_job = backend.run(
-                    circuit=circuit,
-                    shots=shots
-                )
+            qiskit_job = backend.run(
+                circuit=circuit,
+                **kwargs
+            )
 
             # Make sure the job is completed before fetching the results
             self._qiskit_wait_to_complete(qiskit_job, provider)
@@ -307,12 +301,20 @@ class TestQiskit(QuantumTestBase):
     @pytest.mark.quantinuum
     @pytest.mark.live_test
     def test_plugins_submit_qiskit_to_quantinuum(self):
-        self.test_plugins_submit_qiskit_to_honeywell(provider_id="quantinuum")
+        circuit = self._3_qubit_ghz()
+        self._test_qiskit_submit_honeywell(circuit=circuit, provider_id="quantinuum")
 
     @pytest.mark.quantinuum
     @pytest.mark.live_test
     def test_plugins_submit_qiskit_circuit_as_list_to_quantinuum(self):
-        self.test_plugins_submit_qiskit_circuit_as_list_to_honeywell(provider_id="quantinuum")
+        circuit = self._3_qubit_ghz()
+        self._test_qiskit_submit_honeywell(circuit=[circuit], provider_id="quantinuum")
+        
+    @pytest.mark.quantinuum
+    @pytest.mark.live_test
+    def test_qir_submit_qiskit_to_quantinuum(self):
+        circuit = self._3_qubit_ghz()
+        self._test_qiskit_submit_honeywell(circuit=circuit, provider_id="quantinuum", input_data_format="qir.v1")
 
     @pytest.mark.quantinuum
     @pytest.mark.live_test

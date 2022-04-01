@@ -123,8 +123,6 @@ class QuantinuumBackend(Backend):
                 # unless the user specifies the backend.
                 kwargs["count"] = run["shots"]
 
-        input_data = circuit.qasm()
-
         # Options are mapped to input_params
         # Take also into consideration options passed in the kwargs, as the take precedence
         # over default values:
@@ -133,6 +131,19 @@ class QuantinuumBackend(Backend):
             if opt in input_params:
                 input_params[opt] = kwargs.pop(opt)
 
+        input_data_format = kwargs.pop("input_data_format", "honeywell.openqasm.v1")
+        output_data_format = kwargs.pop("output_data_format", "honeywell.quantum-results.v1")
+
+        if input_data_format == "qir.v1":
+            from qiskit_qir import to_qir_bitcode
+            input_data = bytes(to_qir_bitcode(circuit))
+            input_params["entryPoint"] = "main"
+            input_params["arguments"] = []
+        elif input_data_format == "honeywell.openqasm.v1":
+            input_data = circuit.qasm()
+        else:
+            raise ValueError(f"Unknown input_data_format: {input_data_format}. Supported formats are 'qir.v1' and 'honeywell.openqasm.v1'")
+
         logger.info(f"Submitting new job for backend {self.name()}")
         job = AzureQuantumJob(
             backend=self,
@@ -140,10 +151,10 @@ class QuantinuumBackend(Backend):
             target=self.name(),
             input_data=input_data,
             blob_name="inputData",
-            content_type="application/qasm",
+            content_type=input_data_format,
             provider_id=self._provider_id,
-            input_data_format="honeywell.openqasm.v1",
-            output_data_format="honeywell.quantum-results.v1",
+            input_data_format=input_data_format,
+            output_data_format=output_data_format,
             input_params=input_params,
             metadata={"qubits": str(circuit.num_qubits)},
             **kwargs
